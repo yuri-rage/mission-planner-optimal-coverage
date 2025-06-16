@@ -250,15 +250,12 @@ namespace OptimalCoverage
             };
 
             // serialize to JSON
-            //var options = new JsonSerializerOptions { WriteIndented = true };
-            //var json = JsonSerializer.Serialize(request, options);
             var settings = new JsonSerializerSettings
             {
                 Formatting = Formatting.Indented,
                 ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
             };
             var json = JsonConvert.SerializeObject(request, settings);
-            Console.WriteLine(json);
 
             form.lbl_Status.Text = "Planning path...";
             using (var client = new WebClient())
