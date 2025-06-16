@@ -5,7 +5,7 @@ using MissionPlanner.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
+using Newtonsoft.Json;
 using System.Windows.Forms;
 using static MAVLink;
 using System.Net;
@@ -162,7 +162,7 @@ namespace OptimalCoverage
                 using (var client = new WebClient())
                 {
                     var response = await client.DownloadStringTaskAsync(api_url);
-                    var statusResponse = JsonSerializer.Deserialize<APIStatusResponse>(response);
+                    var statusResponse = JsonConvert.DeserializeObject<APIStatusResponse>(response);
                     if (statusResponse?.Status == "success")
                     {
                         form.lbl_Status.Text = $"{statusResponse.Name} : Online";
@@ -250,8 +250,15 @@ namespace OptimalCoverage
             };
 
             // serialize to JSON
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            var json = JsonSerializer.Serialize(request, options);
+            //var options = new JsonSerializerOptions { WriteIndented = true };
+            //var json = JsonSerializer.Serialize(request, options);
+            var settings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+            };
+            var json = JsonConvert.SerializeObject(request, settings);
+            Console.WriteLine(json);
 
             form.lbl_Status.Text = "Planning path...";
             using (var client = new WebClient())
@@ -261,17 +268,30 @@ namespace OptimalCoverage
                     client.Headers[HttpRequestHeader.ContentType] = "application/json";
                     var response = await client.UploadStringTaskAsync(api_url + "plan-path", "POST", json);
 
-                    var pathResponse = JsonSerializer.Deserialize<PathPlannerResponse>(response);
-                    if (pathResponse?.Status == "success" &&
-                        pathResponse.Path?.Type == "LineString" &&
-                        pathResponse.Path?.Coordinates != null)
+                    var pathResponse = JsonConvert.DeserializeObject<PathPlannerResponse>(response);
+                    if (pathResponse == null)
                     {
-                        Console.WriteLine($"Optimal Coverage: Received {pathResponse.Path.Coordinates.Count} waypoints.");
-                        var waypoints = pathResponse.Path.Coordinates
-                            .Select(coord => new utmpos(coord[0], coord[1], utmZone).ToLLA())
-                            .ToList();
-                        WriteWaypointMission(waypoints);
+                        form.lbl_Status.Text = "Error: Invalid response from path planner";
+                        return;
                     }
+
+                    if (pathResponse.Status != "success")
+                    {
+                        form.lbl_Status.Text = $"Error: Path planner returned status '{pathResponse.Status}'";
+                        return;
+                    }
+
+                    if (pathResponse.Path?.Type != "LineString" || pathResponse.Path?.Coordinates == null)
+                    {
+                        form.lbl_Status.Text = "Error: Invalid path data in response";
+                        return;
+                    }
+
+                    Console.WriteLine($"Optimal Coverage: Received {pathResponse.Path.Coordinates.Count} waypoints.");
+                    var waypoints = pathResponse.Path.Coordinates
+                        .Select(coord => new utmpos(coord[0], coord[1], utmZone).ToLLA())
+                        .ToList();
+                    WriteWaypointMission(waypoints);
                     form.lbl_Status.Text = $"Received {pathResponse.Path.Coordinates.Count} waypoints ({pathResponse.Length:F1}m)";
                 }
                 catch (Exception ex)
