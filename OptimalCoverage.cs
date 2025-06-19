@@ -16,7 +16,7 @@ namespace OptimalCoverage
     public class OptimalCoverage : Plugin
     {
         public override string Name => "Optimal Coverage";
-        public override string Version => "v0.1.1-alpha";
+        public override string Version => "v0.1.2-alpha";
         public override string Author => "Yuri Rage";
 
         private string api_host = "127.0.0.1";
@@ -42,8 +42,7 @@ namespace OptimalCoverage
 
         public override bool Loaded()
         {
-            // waypoint/fence grid on FlightPlanner GCS view
-            commands = Host.MainForm.FlightPlanner.Controls.Find("Commands", true).FirstOrDefault() as MyDataGridView;
+            commands = Host.MainForm.FlightPlanner.Commands;
             form = new OptimalCoverageUI { Text = $"{Name} {Version}" };
             form.btn_Submit.Click += SubmitClick;
             form.btn_Refresh.Click += RefreshClick;
