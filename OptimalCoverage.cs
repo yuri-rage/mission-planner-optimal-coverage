@@ -16,7 +16,7 @@ namespace OptimalCoverage
     public class OptimalCoverage : Plugin
     {
         public override string Name => "Optimal Coverage";
-        public override string Version => "v0.1.0-alpha";
+        public override string Version => "v0.1.1-alpha";
         public override string Author => "Yuri Rage";
 
         private string api_host = "127.0.0.1";
@@ -165,7 +165,7 @@ namespace OptimalCoverage
                     var statusResponse = JsonConvert.DeserializeObject<APIStatusResponse>(response);
                     if (statusResponse?.Status == "success")
                     {
-                        form.lbl_Status.Text = $"{statusResponse.Name} : Online";
+                        form.lbl_Status.Text = $"F2C API v{statusResponse.Version} : Online";
                         form.btn_Submit.Enabled = true;
                         APIHealthy = true;
                     }
